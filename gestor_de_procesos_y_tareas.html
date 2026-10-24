@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Configuración del conjunto de caracteres utf-8 para admitir acentos y caracteres especiales -->
+    <meta charset="UTF-8">
+    <!-- Configuración del viewport para garantizar adaptabilidad y lectura responsiva en todo dispositivo -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Profesional de Procesos y Tareas</title>
+
+    <!-- Carga del CDN de Tailwind CSS para utilidades de diseño modernas y responsivas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configuración personalizada de Tailwind CSS para admitir la clase del modo oscuro por clase HTML
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Iconos vectoriales de FontAwesome para mejorar la interacción visual -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tipografía oficial 'Inter' desde Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Estilos personalizados para animaciones y scrollbar -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Estilizado responsivo de la barra de desplazamiento */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.7);
+        }
+
+        /* Transiciones suaves para diálogos modales */
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-modal {
+            animation: modalFadeIn 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- ESTRUCTURA PRINCIPAL DEL NAVEGADOR / ENCABEZADO -->
+    <header class="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Logo y Título de la Aplicación -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20 flex items-center justify-center">
+                    <i class="fa-solid fa-list-check text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-white">ProcessFlow Pro</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Gestión e Inteligencia de Procesos</p>
+                </div>
+            </div>
+
+            <!-- Acciones de Cabecera: Exportar, Modo Oscuro y Nuevo Proceso -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                
+                <!-- Botón de Conmutación de Tema Light / Dark -->
+                <button id="themeToggleBtn" title="Cambiar Tema" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors focus:outline-none">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Menú desplegable para Exportar / Importar Datos -->
+                <div class="relative inline-block text-left">
+                    <button id="exportMenuBtn" class="px-3 py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center space-x-2">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span class="hidden md:inline">Datos</span>
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </button>
+                    <!-- Opciones desplegables -->
+                    <div id="exportDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-40">
+                        <button id="exportJsonBtn" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
+                            <i class="fa-solid fa-code text-indigo-500"></i>
+                            <span>Exportar JSON</span>
+                        </button>
+                        <button id="exportCsvBtn" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2">
+                            <i class="fa-solid fa-file-csv text-emerald-500"></i>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <hr class="border-slate-200 dark:border-slate-700 my-1">
+                        <label for="importJsonInput" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center space-x-2 cursor-pointer">
+                            <i class="fa-solid fa-file-import text-amber-500"></i>
+                            <span>Importar JSON</span>
+                        </label>
+                        <input type="file" id="importJsonInput" accept=".json" class="hidden">
+                        <button id="restoreDefaultsBtn" class="w-full text-left px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center space-x-2">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Restaurar Predeterminados</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botón Principal: Nuevo Proceso -->
+                <button id="openModalBtn" class="px-4 py-2 text-sm font-semibold rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-all shadow-md shadow-brand-500/20 flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nuevo Proceso</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        
+        <!-- DASHBOARD DE MÉTRICAS DINÁMICAS -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            
+            <!-- Métrica 1: Total de Procesos -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Procesos</p>
+                    <h3 id="metricTotal" class="text-2xl font-bold text-slate-900 dark:text-white mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+            </div>
+
+            <!-- Métrica 2: Completados -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Completados</p>
+                    <h3 id="metricCompleted" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+
+            <!-- Métrica 3: En Progreso -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">En Progreso</p>
+                    <h3 id="metricInProgress" class="text-2xl font-bold text-sky-600 dark:text-sky-400 mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-spinner"></i>
+                </div>
+            </div>
+
+            <!-- Métrica 4: Pendientes -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pendientes</p>
+                    <h3 id="metricPending" class="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">0</h3>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+
+            <!-- Métrica 5: Avance General Promedio -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avance Promedio</p>
+                    <h3 id="metricAvgProgress" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0%</h3>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- BÚSQUEDA, FILTROS Y ORDENAMIENTO -->
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Buscador general por texto -->
+            <div class="relative w-full md:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input id="searchInput" type="text" placeholder="Buscar por título, responsable o descripción..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100 placeholder-slate-400">
+            </div>
+
+            <!-- Controles de filtrado y orden -->
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                
+                <!-- Filtro por Estado -->
+                <select id="filterStatus" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-700 dark:text-slate-300">
+                    <option value="all">Todos los Estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Progreso">En Progreso</option>
+                    <option value="Completado">Completado</option>
+                </select>
+
+                <!-- Filtro por Prioridad -->
+                <select id="filterPriority" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-700 dark:text-slate-300">
+                    <option value="all">Todas las Prioridades</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Media">Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+
+                <!-- Ordenamiento -->
+                <select id="sortBy" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-700 dark:text-slate-300">
+                    <option value="dueDate">Orden: Fecha límite</option>
+                    <option value="title">Orden: Nombre</option>
+                    <option value="progress">Orden: % Avance</option>
+                    <option value="priority">Orden: Prioridad</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- TARJETAS Y VISTA DE REGISTROS DE PROCESOS -->
+        <section id="processContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- El contenido dinámico es renderizado con JavaScript -->
+        </section>
+
+        <!-- ESTADO VACÍO (Si no coinciden los datos) -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center text-2xl mb-3">
+                <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-700 dark:text-slate-300">No hay procesos que mostrar</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1">Prueba cambiando los criterios de filtro o agrega un nuevo proceso.</p>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 transition-colors mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+            ProcessFlow Pro &copy; Artefacto Web Autónomo con Persistencia de Datos.
+        </div>
+    </footer>
+
+    <!-- MODAL PARA AGREGAR / EDITAR PROCESO -->
+    <div id="processModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full shadow-2xl overflow-hidden animate-modal">
+            
+            <!-- Cabecera Modal -->
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Nuevo Proceso</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Formulario Modal -->
+            <form id="processForm" class="p-6 space-y-4">
+                <input type="hidden" id="processId">
+
+                <!-- Título -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Título del Proceso *</label>
+                    <input type="text" id="formTitle" required placeholder="Ej. Auditoría de Seguridad Web" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100">
+                </div>
+
+                <!-- Descripción -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Descripción</label>
+                    <textarea id="formDescription" rows="2" placeholder="Detalles de los objetivos o alcances..." class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100 resize-none"></textarea>
+                </div>
+
+                <!-- Fila: Responsable y Prioridad -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Responsable *</label>
+                        <input type="text" id="formAssignee" required placeholder="Ej. Ana Martínez" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Prioridad</label>
+                        <select id="formPriority" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100">
+                            <option value="Alta">Alta</option>
+                            <option value="Media" selected>Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Fila: Estado y Fecha Límite -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Estado</label>
+                        <select id="formStatus" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En Progreso" selected>En Progreso</option>
+                            <option value="Completado">Completado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Fecha Límite *</label>
+                        <input type="date" id="formDueDate" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-slate-100">
+                    </div>
+                </div>
+
+                <!-- Porcentaje de Avance (Slider + Input) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase">Avance (%)</label>
+                        <span id="progressValDisplay" class="text-xs font-bold text-brand-600 dark:text-brand-400">50%</span>
+                    </div>
+                    <input type="range" id="formProgress" min="0" max="100" value="50" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-600">
+                </div>
+
+                <!-- Acciones Modal -->
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" id="cancelModalBtn" class="px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-md shadow-brand-500/20">Guardar Proceso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DE ALERTAS TOAST -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- LÓGICA DE PROGRAMACIÓN JAVASCRIPT INTEGRADA -->
+    <script>
+        // =========================================================================
+        // 1. DATOS PREDETERMINADOS (SE CARGAN SI LOCALSTORAGE ESTÁ VACÍO)
+        // =========================================================================
+        const INITIAL_PROCESSES = [
+            {
+                id: "proc-101",
+                title: "Implementación Servidor SSO",
+                description: "Configuración e integración del protocolo OAuth2/OpenID para inicio de sesión único.",
+                assignee: "Carlos Mendoza",
+                priority: "Alta",
+                status: "En Progreso",
+                progress: 65,
+                dueDate: "2026-11-15",
+                createdAt: "2026-10-01"
+            },
+            {
+                id: "proc-102",
+                title: "Rediseño de Interfaz Móvil",
+                description: "Actualización de pantallas responsivas en Tailwind para el módulo de compras.",
+                assignee: "Lucía Fernández",
+                priority: "Media",
+                status: "Completado",
+                progress: 100,
+                dueDate: "2026-10-20",
+                createdAt: "2026-09-15"
+            },
+            {
+                id: "proc-103",
+                title: "Auditoría de Cumplimiento GDPR",
+                description: "Revisión de cláusulas de privacidad de datos personales y almacenamiento de cookies.",
+                assignee: "Roberto Gómez",
+                priority: "Alta",
+                status: "Pendiente",
+                progress: 10,
+                dueDate: "2026-12-01",
+                createdAt: "2026-10-10"
+            },
+            {
+                id: "proc-104",
+                title: "Migración de Base de Datos",
+                description: "Optimización de esquemas en PostgreSQL y paso a réplicas en alta disponibilidad.",
+                assignee: "Ana Martínez",
+                priority: "Alta",
+                status: "En Progreso",
+                progress: 40,
+                dueDate: "2026-11-05",
+                createdAt: "2026-10-05"
+            },
+            {
+                id: "proc-105",
+                title: "Capacitación de Personal Técnico",
+                description: "Talleres prácticos de desarrollo seguro e integración continua con GitHub Actions.",
+                assignee: "Valeria Torres",
+                priority: "Baja",
+                status: "Pendiente",
+                progress: 0,
+                dueDate: "2026-12-15",
+                createdAt: "2026-10-22"
+            }
+        ];
+
+        // =========================================================================
+        // 2. ESTADO GLOBAL DE LA APLICACIÓN
+        // =========================================================================
+        let state = {
+            processes: [],
+            theme: localStorage.getItem('flow_theme') || 'light',
+            searchQuery: '',
+            filterStatus: 'all',
+            filterPriority: 'all',
+            sortBy: 'dueDate'
+        };
+
+        // =========================================================================
+        // 3. REFERENCIAS AL DOM
+        // =========================================================================
+        const DOM = {
+            html: document.documentElement,
+            themeToggleBtn: document.getElementById('themeToggleBtn'),
+            themeIcon: document.getElementById('themeIcon'),
+            exportMenuBtn: document.getElementById('exportMenuBtn'),
+            exportDropdown: document.getElementById('exportDropdown'),
+            exportJsonBtn: document.getElementById('exportJsonBtn'),
+            exportCsvBtn: document.getElementById('exportCsvBtn'),
+            importJsonInput: document.getElementById('importJsonInput'),
+            restoreDefaultsBtn: document.getElementById('restoreDefaultsBtn'),
+            openModalBtn: document.getElementById('openModalBtn'),
+            closeModalBtn: document.getElementById('closeModalBtn'),
+            cancelModalBtn: document.getElementById('cancelModalBtn'),
+            processModal: document.getElementById('processModal'),
+            processForm: document.getElementById('processForm'),
+            modalTitle: document.getElementById('modalTitle'),
+            processIdInput: document.getElementById('processId'),
+            formTitle: document.getElementById('formTitle'),
+            formDescription: document.getElementById('formDescription'),
+            formAssignee: document.getElementById('formAssignee'),
+            formPriority: document.getElementById('formPriority'),
+            formStatus: document.getElementById('formStatus'),
+            formDueDate: document.getElementById('formDueDate'),
+            formProgress: document.getElementById('formProgress'),
+            progressValDisplay: document.getElementById('progressValDisplay'),
+            searchInput: document.getElementById('searchInput'),
+            filterStatus: document.getElementById('filterStatus'),
+            filterPriority: document.getElementById('filterPriority'),
+            sortBy: document.getElementById('sortBy'),
+            processContainer: document.getElementById('processContainer'),
+            emptyState: document.getElementById('emptyState'),
+            metricTotal: document.getElementById('metricTotal'),
+            metricCompleted: document.getElementById('metricCompleted'),
+            metricInProgress: document.getElementById('metricInProgress'),
+            metricPending: document.getElementById('metricPending'),
+            metricAvgProgress: document.getElementById('metricAvgProgress'),
+            toastContainer: document.getElementById('toastContainer')
+        };
+
+        // =========================================================================
+        // 4. INICIALIZACIÓN Y MANEJO DE ALMACENAMIENTO (LOCALSTORAGE)
+        // =========================================================================
+        function initApp() {
+            // Cargar datos guardados o establecer los predeterminados
+            const savedData = localStorage.getItem('flow_processes_data');
+            if (savedData) {
+                try {
+                    state.processes = JSON.parse(savedData);
+                } catch (e) {
+                    state.processes = [...INITIAL_PROCESSES];
+                }
+            } else {
+                state.processes = [...INITIAL_PROCESSES];
+                saveProcesses();
+            }
+
+            applyTheme();
+            setupEventListeners();
+            render();
+        }
+
+        function saveProcesses() {
+            localStorage.setItem('flow_processes_data', JSON.stringify(state.processes));
+            render();
+        }
+
+        // =========================================================================
+        // 5. GESTIÓN DEL TEMA Y NOTIFICACIONES TOAST
+        // =========================================================================
+        function applyTheme() {
+            if (state.theme === 'dark') {
+                DOM.html.classList.add('dark');
+                DOM.themeIcon.className = 'fa-solid fa-sun';
+            } else {
+                DOM.html.classList.remove('dark');
+                DOM.themeIcon.className = 'fa-solid fa-moon';
+            }
+            localStorage.setItem('flow_theme', state.theme);
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            applyTheme();
+            showToast(`Modo ${state.theme === 'dark' ? 'Oscuro' : 'Claro'} activado`, 'info');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            let icon = 'fa-circle-check text-emerald-500';
+            if (type === 'error') icon = 'fa-circle-xmark text-rose-500';
+            if (type === 'info') icon = 'fa-circle-info text-sky-500';
+
+            toast.className = 'pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-sm font-medium flex items-center space-x-3 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 transition-all duration-300';
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i><span>${message}</span>`;
+
+            DOM.toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // =========================================================================
+        // 6. CÁLCULO DE MÉTRICAS DEL DASHBOARD
+        // =========================================================================
+        function updateMetrics() {
+            const total = state.processes.length;
+            const completed = state.processes.filter(p => p.status === 'Completado').length;
+            const inProgress = state.processes.filter(p => p.status === 'En Progreso').length;
+            const pending = state.processes.filter(p => p.status === 'Pendiente').length;
+            
+            const totalProgressSum = state.processes.reduce((acc, p) => acc + Number(p.progress || 0), 0);
+            const avgProgress = total > 0 ? Math.round(totalProgressSum / total) : 0;
+
+            DOM.metricTotal.textContent = total;
+            DOM.metricCompleted.textContent = completed;
+            DOM.metricInProgress.textContent = inProgress;
+            DOM.metricPending.textContent = pending;
+            DOM.metricAvgProgress.textContent = `${avgProgress}%`;
+        }
+
+        // =========================================================================
+        // 7. RENDERIZADO PRINCIPAL Y FILTRADO
+        // =========================================================================
+        function render() {
+            updateMetrics();
+
+            // Filtrado
+            let filtered = state.processes.filter(item => {
+                const query = state.searchQuery.toLowerCase();
+                const matchesSearch = item.title.toLowerCase().includes(query) ||
+                                      item.assignee.toLowerCase().includes(query) ||
+                                      item.description.toLowerCase().includes(query);
+                
+                const matchesStatus = state.filterStatus === 'all' || item.status === state.filterStatus;
+                const matchesPriority = state.filterPriority === 'all' || item.priority === state.filterPriority;
+
+                return matchesSearch && matchesStatus && matchesPriority;
+            });
+
+            // Ordenamiento
+            filtered.sort((a, b) => {
+                if (state.sortBy === 'dueDate') return new Date(a.dueDate) - new Date(b.dueDate);
+                if (state.sortBy === 'title') return a.title.localeCompare(b.title);
+                if (state.sortBy === 'progress') return b.progress - a.progress;
+                if (state.sortBy === 'priority') {
+                    const weight = { 'Alta': 3, 'Media': 2, 'Baja': 1 };
+                    return weight[b.priority] - weight[a.priority];
+                }
+                return 0;
+            });
+
+            // Control de Vista Vacía
+            if (filtered.length === 0) {
+                DOM.processContainer.innerHTML = '';
+                DOM.emptyState.classList.remove('hidden');
+                DOM.emptyState.classList.add('flex');
+                return;
+            } else {
+                DOM.emptyState.classList.add('hidden');
+                DOM.emptyState.classList.remove('flex');
+            }
+
+            // Inyección HTML de Tarjetas
+            DOM.processContainer.innerHTML = filtered.map(p => {
+                // Configuración de Estilos de Etiquetas según estado y prioridad
+                let statusBadge = 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+                if (p.status === 'Completado') statusBadge = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300';
+                if (p.status === 'En Progreso') statusBadge = 'bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300';
+                if (p.status === 'Pendiente') statusBadge = 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300';
+
+                let priorityBadge = 'text-slate-500';
+                if (p.priority === 'Alta') priorityBadge = 'text-rose-600 dark:text-rose-400 font-semibold';
+                if (p.priority === 'Media') priorityBadge = 'text-amber-600 dark:text-amber-400 font-medium';
+
+                return `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                        <div>
+                            <!-- Estado y Prioridad -->
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="px-2.5 py-1 text-xs font-semibold rounded-lg ${statusBadge}">
+                                    ${p.status}
+                                </span>
+                                <span class="text-xs ${priorityBadge} flex items-center gap-1">
+                                    <i class="fa-solid fa-flag text-[10px]"></i> Prioridad ${p.priority}
+                                </span>
+                            </div>
+
+                            <!-- Título y Descripción -->
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base mb-1">
+                                ${escapeHtml(p.title)}
+                            </h3>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
+                                ${escapeHtml(p.description) || 'Sin descripción.'}
+                            </p>
+
+                            <!-- Indicador de Avance -->
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center text-xs mb-1">
+                                    <span class="text-slate-500 dark:text-slate-400">Progreso</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200">${p.progress}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-brand-600 h-2 rounded-full transition-all duration-300" style="width: ${p.progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pie de la Tarjeta (Responsable, Fecha y Acciones) -->
+                        <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs">
+                            <div class="text-slate-500 dark:text-slate-400">
+                                <p class="font-medium text-slate-700 dark:text-slate-300"><i class="fa-regular fa-user mr-1"></i>${escapeHtml(p.assignee)}</p>
+                                <p class="mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>${p.dueDate}</p>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="flex items-center space-x-1">
+                                <button onclick="editProcess('${p.id}')" title="Editar" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 hover:text-brand-600 transition-colors">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deleteProcess('${p.id}')" title="Eliminar" class="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-slate-500 hover:text-rose-600 transition-colors">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Prevención de inyección XSS en textos dinámicos
+        function escapeHtml(str) {
+            return (str || '').replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        // =========================================================================
+        // 8. FUNCIONES CRUD (CREAR, EDITAR, ELIMINAR, RESTAURAR)
+        // =========================================================================
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const id = DOM.processIdInput.value;
+            const title = DOM.formTitle.value.trim();
+            const description = DOM.formDescription.value.trim();
+            const assignee = DOM.formAssignee.value.trim();
+            const priority = DOM.formPriority.value;
+            const status = DOM.formStatus.value;
+            const dueDate = DOM.formDueDate.value;
+            let progress = Number(DOM.formProgress.value);
+
+            // Regla automática: Si se marca como completado, el progreso pasa a 100%
+            if (status === 'Completado') progress = 100;
+
+            if (id) {
+                // Modo Edición
+                state.processes = state.processes.map(p => 
+                    p.id === id ? { ...p, title, description, assignee, priority, status, dueDate, progress } : p
+                );
+                showToast('Proceso actualizado exitosamente');
+            } else {
+                // Modo Registro Nuevo
+                const newProcess = {
+                    id: 'proc-' + Date.now(),
+                    title,
+                    description,
+                    assignee,
+                    priority,
+                    status,
+                    dueDate,
+                    progress,
+                    createdAt: new Date().toISOString().split('T')[0]
+                };
+                state.processes.unshift(newProcess);
+                showToast('Nuevo proceso guardado');
+            }
+
+            saveProcesses();
+            closeModal();
+        }
+
+        function editProcess(id) {
+            const p = state.processes.find(item => item.id === id);
+            if (!p) return;
+
+            DOM.processIdInput.value = p.id;
+            DOM.formTitle.value = p.title;
+            DOM.formDescription.value = p.description;
+            DOM.formAssignee.value = p.assignee;
+            DOM.formPriority.value = p.priority;
+            DOM.formStatus.value = p.status;
+            DOM.formDueDate.value = p.dueDate;
+            DOM.formProgress.value = p.progress;
+            DOM.progressValDisplay.textContent = `${p.progress}%`;
+
+            DOM.modalTitle.textContent = 'Editar Proceso';
+            openModal();
+        }
+
+        function deleteProcess(id) {
+            if (confirm('¿Eliminar definitivamente este proceso?')) {
+                state.processes = state.processes.filter(p => p.id !== id);
+                saveProcesses();
+                showToast('Proceso eliminado', 'error');
+            }
+        }
+
+        function restoreDefaults() {
+            if (confirm('¿Deseas restaurar la lista de procesos predeterminada? Se sobrescribirán tus cambios actuales.')) {
+                state.processes = [...INITIAL_PROCESSES];
+                saveProcesses();
+                showToast('Datos predeterminados restaurados', 'info');
+            }
+        }
+
+        // =========================================================================
+        // 9. EXPORTACIÓN E IMPORTACIÓN DE DATOS (JSON / CSV)
+        // =========================================================================
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.processes, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `procesos_export_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Archivo JSON exportado');
+        }
+
+        function exportCSV() {
+            if (state.processes.length === 0) {
+                showToast('No hay datos para exportar', 'error');
+                return;
+            }
+
+            const headers = ['ID', 'Titulo', 'Descripcion', 'Responsable', 'Prioridad', 'Estado', 'Progreso', 'FechaLimite'];
+            const rows = state.processes.map(p => [
+                `"${p.id}"`,
+                `"${p.title.replace(/"/g, '""')}"`,
+                `"${p.description.replace(/"/g, '""')}"`,
+                `"${p.assignee.replace(/"/g, '""')}"`,
+                `"${p.priority}"`,
+                `"${p.status}"`,
+                p.progress,
+                `"${p.dueDate}"`
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `procesos_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showToast('Archivo CSV exportado');
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        state.processes = importedData;
+                        saveProcesses();
+                        showToast('Datos importados correctamente');
+                    } else {
+                        showToast('El archivo no tiene un formato de lista válido', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error al leer el archivo JSON', 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        // =========================================================================
+        // 10. GESTIÓN DEL MODAL
+        // =========================================================================
+        function openModal() {
+            DOM.processModal.classList.remove('hidden');
+            if (!DOM.processIdInput.value) {
+                // Asignar fecha por defecto al crear uno nuevo (+7 días)
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() + 7);
+                DOM.formDueDate.value = targetDate.toISOString().split('T')[0];
+            }
+        }
+
+        function closeModal() {
+            DOM.processModal.classList.add('hidden');
+            DOM.processForm.reset();
+            DOM.processIdInput.value = '';
+            DOM.modalTitle.textContent = 'Nuevo Proceso';
+            DOM.progressValDisplay.textContent = '50%';
+        }
+
+        // =========================================================================
+        // 11. REGISTRO DE EVENT LISTENERS
+        // =========================================================================
+        function setupEventListeners() {
+            // Cambio de tema
+            DOM.themeToggleBtn.addEventListener('click', toggleTheme);
+
+            // Menú desplegable de exportar
+            DOM.exportMenuBtn.addEventListener('click', () => {
+                DOM.exportDropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!DOM.exportMenuBtn.contains(e.target) && !DOM.exportDropdown.contains(e.target)) {
+                    DOM.exportDropdown.classList.add('hidden');
+                }
+            });
+
+            DOM.exportJsonBtn.addEventListener('click', () => {
+                exportJSON();
+                DOM.exportDropdown.classList.add('hidden');
+            });
+
+            DOM.exportCsvBtn.addEventListener('click', () => {
+                exportCSV();
+                DOM.exportDropdown.classList.add('hidden');
+            });
+
+            DOM.importJsonInput.addEventListener('change', (e) => {
+                importJSON(e);
+                DOM.exportDropdown.classList.add('hidden');
+            });
+
+            DOM.restoreDefaultsBtn.addEventListener('click', () => {
+                restoreDefaults();
+                DOM.exportDropdown.classList.add('hidden');
+            });
+
+            // Modal
+            DOM.openModalBtn.addEventListener('click', openModal);
+            DOM.closeModalBtn.addEventListener('click', closeModal);
+            DOM.cancelModalBtn.addEventListener('click', closeModal);
+            DOM.processForm.addEventListener('submit', handleFormSubmit);
+
+            // Slider de avance
+            DOM.formProgress.addEventListener('input', (e) => {
+                DOM.progressValDisplay.textContent = `${e.target.value}%`;
+            });
+
+            // Búsqueda y Filtros
+            DOM.searchInput.addEventListener('input', (e) => {
+                state.searchQuery = e.target.value;
+                render();
+            });
+
+            DOM.filterStatus.addEventListener('change', (e) => {
+                state.filterStatus = e.target.value;
+                render();
+            });
+
+            DOM.filterPriority.addEventListener('change', (e) => {
+                state.filterPriority = e.target.value;
+                render();
+            });
+
+            DOM.sortBy.addEventListener('change', (e) => {
+                state.sortBy = e.target.value;
+                render();
+            });
+
+            // Cierre del modal con clic fuera
+            DOM.processModal.addEventListener('click', (e) => {
+                if (e.target === DOM.processModal) closeModal();
+            });
+        }
+
+        // Inicializar la aplicación tras la carga del DOM
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
